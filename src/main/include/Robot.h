@@ -55,6 +55,7 @@ class Robot : public frc::TimedRobot {
   bool m_lastBButton = false;
   bool m_lastXButton = false;
   bool m_lastYButton = false;
+  bool m_lastKillButton = false;
   double CalcTilt(double distance);
 
   nt::StringPublisher m_statePub;

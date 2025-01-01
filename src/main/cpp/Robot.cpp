@@ -59,12 +59,22 @@ void Robot::TeleopInit() {
 void Robot::TeleopPeriodic() {
   double leftHorizAxis = m_container.m_controller.GetRawAxis(0); //pan
   double leftVertAxis = m_container.m_controller.GetRawAxis(1); //tilt
-  double rightVertAxis = m_container.m_controller.GetRawAxis(3); //linear
+  double rightVertAxis = m_container.m_controller.GetRawAxis(5); //linear
+
+  bool killButton = m_container.m_controller.GetRawButton(5); //kill - Left Bumper
+  bool killEvent = killButton && !m_lastKillButton;
+  m_lastKillButton = killButton;
   
+  /*
   bool aButton = m_aDebouncer.Calculate(m_container.m_controller.GetRawButton(0));
   bool bButton = m_bDebouncer.Calculate(m_container.m_controller.GetRawButton(1));
   bool xButton = m_xDebouncer.Calculate(m_container.m_controller.GetRawButton(2));
   bool yButton = m_yDebouncer.Calculate(m_container.m_controller.GetRawButton(3));
+  */
+  bool aButton = m_container.m_controller.GetRawButton(1);
+  bool bButton = m_container.m_controller.GetRawButton(2);
+  bool xButton = m_container.m_controller.GetRawButton(3);
+  bool yButton = m_container.m_controller.GetRawButton(4);
 
   bool aEvent = aButton && !m_lastAButton;
   bool bEvent = bButton && !m_lastBButton;
@@ -75,92 +85,101 @@ void Robot::TeleopPeriodic() {
   m_lastBButton = bButton;
   m_lastXButton = xButton;
   m_lastYButton = yButton;
+  if (killEvent) {
+    m_state = STANDBY;
+    m_statePub.Set("STANDBY");
+    m_container.m_tilt.SetSpeed(0.0);
+    m_container.m_pan.SetSpeed(0.0);
+    m_container.m_linear.SetSpeed(0.0);
+  }
+  else {
+    switch(m_state) {
+      case STANDBY:
+        if (yEvent) {
+          m_state = LINEAR_ADJUST;
+          m_statePub.Set("LINEAR_ADJUST");
+          m_container.m_linear.StartAdjustment();
+        }
+        else if (xEvent) {
+          m_state = PREPARE;
+          m_statePub.Set("PREPARE");
+          m_position = kStartDistance;
+          double tilt = CalcTilt(kStartDistance);
+          m_container.m_linear.SetDistance(kStartDistance);
+          m_container.m_pan.SetAngle(0.0, false);
+          m_container.m_tilt.SetAngle(tilt);
+        }
+        break;
 
-  switch(m_state) {
-    case STANDBY:
-      if (yEvent) {
-        m_state = LINEAR_ADJUST;
-        m_statePub.Set("LINEAR_ADJUST");
-        m_container.m_linear.StartAdjustment();
-      }
-      else if (xEvent) {
-        m_state = PREPARE;
-        m_statePub.Set("PREPARE");
-        m_position = kStartDistance;
-        double tilt = CalcTilt(kStartDistance);
-        m_container.m_linear.SetDistance(kStartDistance);
-        m_container.m_pan.SetAngle(0.0, false);
-        m_container.m_tilt.SetAngle(tilt);
-      }
-      break;
+      case LINEAR_ADJUST:
+        if (aEvent) {
+          m_container.m_linear.EndAdjustment(kStartDistance);
+          m_state = TILT_ADJUST;
+          m_statePub.Set("TILT_ADJUST");
+          m_container.m_tilt.StartAdjustment();
+        }
+        else {
+          m_container.m_linear.SetSpeed(rightVertAxis);
+        }
+        break;
 
-    case LINEAR_ADJUST:
-      if (aEvent) {
-        m_container.m_linear.EndAdjustment(kStartDistance);
-        m_state = TILT_ADJUST;
-        m_statePub.Set("TILT_ADJUST");
-        m_container.m_tilt.StartAdjustment();
-      }
-      else {
-        m_container.m_linear.SetSpeed(rightVertAxis);
-      }
-      break;
+      case TILT_ADJUST:
+        if (aEvent) {
+          m_container.m_tilt.EndAdjustment();
+          m_state = LOADING;
+          m_statePub.Set("LOADING");
+        }
+        else {
+          m_container.m_tilt.SetSpeed(leftVertAxis*0.25);
+        }
+        break;
 
-    case TILT_ADJUST:
-      if (aEvent) {
-        m_container.m_tilt.EndAdjustment();
-        m_state = LOADING;
-        m_statePub.Set("LOADING");
-      }
-      else {
-        m_container.m_tilt.SetSpeed(leftVertAxis);
-      }
-      break;
+      case LOADING:
+        if (aEvent) {
+          m_state = PAN_ADJUST;
+          m_statePub.Set("PAN_ADJUST");
+          m_container.m_pan.StartAdjustment();
+          m_container.m_tilt.SetAngle(90.0);
+        }
+        break;
 
-    case LOADING:
-      if (aEvent) {
-        m_state = PAN_ADJUST;
-        m_statePub.Set("PAN_ADJUST");
-        m_container.m_pan.StartAdjustment();
-      }
-      break;
-
-    case PAN_ADJUST:
-      if (aEvent) {
-        m_container.m_pan.EndAdjustment();
-        m_state = STANDBY;
-        m_statePub.Set("STANDBY");
-      }
-      else {
-        m_container.m_pan.SetSpeed(leftHorizAxis);
-      }
-      break;
-
-    case PREPARE:
-      if (m_container.m_linear.CheckGoal() && m_container.m_pan.CheckGoal() && m_container.m_tilt.CheckGoal()) {
-        m_state = ROTATE_COLLECT;
-        m_statePub.Set("ROTATE_COLLECT");
-        m_container.m_pan.SetAngle(360.0, true);
-      }
-      break;
-
-    case ROTATE_COLLECT:
-      if (m_container.m_pan.CheckGoal()) {
-        m_position += kStepDistance;
-        if (m_position > kEndDistance) {
+      case PAN_ADJUST:
+        if (aEvent) {
+          m_container.m_pan.EndAdjustment();
           m_state = STANDBY;
           m_statePub.Set("STANDBY");
         }
         else {
-          double tilt = CalcTilt(m_position);
-          m_container.m_linear.SetDistance(m_position);
-          m_container.m_pan.SetAngle(0.0, false);
-          m_container.m_tilt.SetAngle(tilt);
-          m_state = PREPARE;
-          m_statePub.Set("STANDBY");
+          m_container.m_pan.SetSpeed(leftHorizAxis*0.25);
         }
-      }
-      break;
+        break;
+
+      case PREPARE:
+        if (m_container.m_linear.CheckGoal() && m_container.m_pan.CheckGoal() && m_container.m_tilt.CheckGoal()) {
+          m_state = ROTATE_COLLECT;
+          m_statePub.Set("ROTATE_COLLECT");
+          m_container.m_pan.SetAngle(360.0, true);
+        }
+        break;
+
+      case ROTATE_COLLECT:
+        if (m_container.m_pan.CheckGoal()) {
+          m_position += kStepDistance;
+          if (m_position > kEndDistance) {
+            m_state = STANDBY;
+            m_statePub.Set("STANDBY");
+          }
+          else {
+            double tilt = CalcTilt(m_position);
+            m_container.m_linear.SetDistance(m_position);
+            m_container.m_pan.SetAngle(0.0, false);
+            m_container.m_tilt.SetAngle(tilt);
+            m_state = PREPARE;
+            m_statePub.Set("STANDBY");
+          }
+        }
+        break;
+    }
   }
   m_tiltPub.Set(m_container.m_tilt.GetAngle());
   m_panPub.Set(m_container.m_pan.GetAngle());

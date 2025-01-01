@@ -13,7 +13,7 @@ void Linear::Periodic() {
     case AUTO_MOVING:
       if (m_controller.AtGoal()) {
         m_state = HOLD;
-        SetSpeed(0.0);
+        m_linearMotor.Set(0.0);
         m_holdDistance = m_controller.GetGoal().position.value();
       }
       else {

@@ -15,6 +15,11 @@
 
 #include "common.h"
 
+#include <networktables/NetworkTable.h>
+#include <networktables/NetworkTableInstance.h>
+#include <networktables/DoubleTopic.h>
+#include <networktables/StringTopic.h>
+
 class Tilt : public frc2::SubsystemBase {
  public:
   Tilt();
@@ -52,11 +57,16 @@ class Tilt : public frc2::SubsystemBase {
   static constexpr units::degrees_per_second_t kMaxVelocity = 45_deg_per_s;
   static constexpr units::degrees_per_second_squared_t kMaxAcceleration = 15_deg_per_s_sq;
 
-  static constexpr double kP = 0.1;
-  static constexpr double kI = 0.0;
-  static constexpr double kD = 0.05;
-  static constexpr units::volt_t kS = 0.2_V; //minimum voltage to move motor
-  static constexpr auto kV = 1.0_V / 108_deg_per_s;
+  static constexpr double kP = 0.025; // 0.05
+  static constexpr double kI = 0.01; // 0.03
+  static constexpr double kD = 0.0; // 0.0005
+
+  static constexpr units::volt_t kS = 0.0_V; //minimum voltage to move motor 0.2
+  static constexpr auto kV = 0.0_V / 108_deg_per_s;
+  static constexpr auto kA = 0.0_V / 108_deg_per_s_sq;
+
+  static constexpr units::degree_t kTolerancePos = 1.0_deg;
+  static constexpr units::degrees_per_second_t kToleranceVel = 0.5_deg_per_s;
   
   static constexpr units::second_t kDt = 20_ms;
 
@@ -66,8 +76,14 @@ class Tilt : public frc2::SubsystemBase {
   frc::TrapezoidProfile<units::degrees>::Constraints m_constraints{kMaxVelocity, kMaxAcceleration};
 
   frc::ProfiledPIDController<units::degrees> m_controller{kP, kI, kD, m_constraints, kDt};
-  frc::SimpleMotorFeedforward<units::degrees> m_feedforward{kS, kV};
+  frc::SimpleMotorFeedforward<units::degrees> m_feedforward{kS, kV, kA};
 
   enum SubSystemState m_state;
   double m_holdAngle;
+
+  nt::StringPublisher m_statePub;
+  nt::DoublePublisher m_forwardPub;
+  nt::DoublePublisher m_backPub;
+  nt::DoublePublisher m_setPointVelPub;
+  nt::DoublePublisher m_setPointPosPub;
 };

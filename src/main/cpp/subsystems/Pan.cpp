@@ -13,7 +13,7 @@ void Pan::Periodic() {
     case AUTO_MOVING:
       if (m_controller.AtGoal()) {
         m_state = HOLD;
-        SetSpeed(0.0);
+        m_panMotor.Set(0.0);
         m_holdAngle = m_controller.GetGoal().position.value();
       }
       else {
