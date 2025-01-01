@@ -51,6 +51,9 @@ void Robot::AutonomousPeriodic() {}
 void Robot::TeleopInit() {
   m_state = STANDBY;
   m_statePub.Set("STANDBY");
+  m_container.m_linear.Init();
+  m_container.m_pan.Init();
+  m_container.m_tilt.Init();
 }
 
 /**
@@ -65,12 +68,6 @@ void Robot::TeleopPeriodic() {
   bool killEvent = killButton && !m_lastKillButton;
   m_lastKillButton = killButton;
   
-  /*
-  bool aButton = m_aDebouncer.Calculate(m_container.m_controller.GetRawButton(0));
-  bool bButton = m_bDebouncer.Calculate(m_container.m_controller.GetRawButton(1));
-  bool xButton = m_xDebouncer.Calculate(m_container.m_controller.GetRawButton(2));
-  bool yButton = m_yDebouncer.Calculate(m_container.m_controller.GetRawButton(3));
-  */
   bool aButton = m_container.m_controller.GetRawButton(1);
   bool bButton = m_container.m_controller.GetRawButton(2);
   bool xButton = m_container.m_controller.GetRawButton(3);
@@ -85,6 +82,7 @@ void Robot::TeleopPeriodic() {
   m_lastBButton = bButton;
   m_lastXButton = xButton;
   m_lastYButton = yButton;
+
   if (killEvent) {
     m_state = STANDBY;
     m_statePub.Set("STANDBY");
@@ -175,7 +173,7 @@ void Robot::TeleopPeriodic() {
             m_container.m_pan.SetAngle(0.0, false);
             m_container.m_tilt.SetAngle(tilt);
             m_state = PREPARE;
-            m_statePub.Set("STANDBY");
+            m_statePub.Set("PREPARE");
           }
         }
         break;

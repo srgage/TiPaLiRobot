@@ -27,9 +27,6 @@
     "transitory": {
       "TiPaLi": {
         "open": true
-      },
-      "Tilt": {
-        "open": true
       }
     }
   },
@@ -56,12 +53,12 @@
           "series": [
             {
               "color": [
-                0.2980392277240753,
-                0.44705885648727417,
-                0.6901960968971252,
+                0.3333333432674408,
+                0.658823549747467,
+                0.4078431725502014,
                 1.0
               ],
-              "id": "NT:/Tilt/Feedback"
+              "id": "NT:/Pan/Feedback"
             },
             {
               "color": [
@@ -70,7 +67,7 @@
                 0.32156863808631897,
                 1.0
               ],
-              "id": "NT:/Tilt/Feedforward"
+              "id": "XRPMotor:motorR-speed"
             }
           ],
           "viewTime": 30.0
@@ -78,8 +75,8 @@
         {
           "axis": [
             {
-              "max": 120.0,
-              "min": -120.0
+              "max": 370.0,
+              "min": -10.0
             }
           ],
           "backgroundColor": [
@@ -97,7 +94,7 @@
                 0.6901960968971252,
                 1.0
               ],
-              "id": "NT:/Tilt/SetPointPos"
+              "id": "NT:/Pan/SetPointPos"
             },
             {
               "color": [
@@ -106,7 +103,7 @@
                 0.32156863808631897,
                 1.0
               ],
-              "id": "NT:/Tilt/SetPointVel"
+              "id": "NT:/Pan/SetPointVel"
             },
             {
               "color": [
@@ -115,7 +112,7 @@
                 0.4078431725502014,
                 1.0
               ],
-              "id": "NT:/TiPaLi/TiltAngle"
+              "id": "NT:/TiPaLi/PanAngle"
             }
           ],
           "viewTime": 30.0
@@ -131,12 +128,69 @@
             0.0,
             0.8500000238418579
           ],
-          "height": 314
+          "height": 279,
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:/Linear/Feedback"
+            },
+            {
+              "color": [
+                0.8666667342185974,
+                0.5176470875740051,
+                0.32156863808631897,
+                1.0
+              ],
+              "id": "XRPMotor:motor4-speed"
+            }
+          ],
+          "viewTime": 30.0
+        },
+        {
+          "backgroundColor": [
+            0.0,
+            0.0,
+            0.0,
+            0.8500000238418579
+          ],
+          "height": 279,
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:/Linear/SetPointPos"
+            },
+            {
+              "color": [
+                0.8666667342185974,
+                0.5176470875740051,
+                0.32156863808631897,
+                1.0
+              ],
+              "id": "NT:/Linear/SetPointVel"
+            },
+            {
+              "color": [
+                0.3333333432674408,
+                0.658823549747467,
+                0.4078431725502014,
+                1.0
+              ],
+              "id": "NT:/TiPaLi/LinearDistance"
+            }
+          ],
+          "viewTime": 30.0
         }
-      ],
-      "window": {
-        "visible": false
-      }
+      ]
     }
   }
 }

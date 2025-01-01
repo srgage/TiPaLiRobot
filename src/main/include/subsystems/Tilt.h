@@ -45,6 +45,7 @@ class Tilt : public frc2::SubsystemBase {
   void StartAdjustment();
   void EndAdjustment();
 
+  void Init();
 
  private:
  /*
@@ -55,7 +56,7 @@ class Tilt : public frc2::SubsystemBase {
   static constexpr double kGearRatio = 5.0;
   static constexpr int kCountsPerMotorRevolution = 585;
   static constexpr units::degrees_per_second_t kMaxVelocity = 45_deg_per_s;
-  static constexpr units::degrees_per_second_squared_t kMaxAcceleration = 15_deg_per_s_sq;
+  static constexpr units::degrees_per_second_squared_t kMaxAcceleration = 5_deg_per_s_sq;
 
   static constexpr double kP = 0.025; // 0.05
   static constexpr double kI = 0.01; // 0.03

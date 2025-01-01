@@ -5,7 +5,6 @@
 #pragma once
 
 #include <frc/Joystick.h>
-#include <frc/filter/Debouncer.h>
 
 #include "subsystems/Linear.h"
 #include "subsystems/Pan.h"

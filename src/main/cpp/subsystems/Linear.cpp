@@ -1,10 +1,18 @@
 #include "subsystems/Linear.h"
 
 Linear::Linear() {
-  m_linearEncoder.SetDistancePerPulse(kWheelDiameter * std::numbers::pi / kCountsPerMotorRevolution);
-  m_linearEncoder.Reset();
-  m_holdDistance = 0.0;
-  m_state = HOLD;
+  Init();
+
+  auto inst = nt::NetworkTableInstance::GetDefault();
+  auto table = inst.GetTable("Linear");
+  m_statePub = table->GetStringTopic("State").Publish();
+  m_backPub = table->GetDoubleTopic("Feedback").Publish();
+  m_setPointVelPub = table->GetDoubleTopic("SetPointVel").Publish();
+  m_setPointPosPub = table->GetDoubleTopic("SetPointPos").Publish();
+
+  m_backPub.Set(0.0);
+  m_setPointVelPub.Set(0.0);
+  m_setPointPosPub.Set(0.0);
 }
 
 void Linear::Periodic() {
@@ -13,14 +21,17 @@ void Linear::Periodic() {
     case AUTO_MOVING:
       if (m_controller.AtGoal()) {
         m_state = HOLD;
+        m_statePub.Set("HOLD");
         m_linearMotor.Set(0.0);
         m_holdDistance = m_controller.GetGoal().position.value();
       }
       else {
-        m_linearMotor.Set(
-          m_controller.Calculate(units::meter_t{GetDistance()}) + 
-          m_feedforward.Calculate(m_controller.GetSetpoint().velocity).value()
-        );
+        double back = m_controller.Calculate(units::meter_t{GetDistance()});
+        auto setpoint = m_controller.GetSetpoint();
+        m_linearMotor.Set(back);
+        m_backPub.Set(back);
+        m_setPointVelPub.Set(setpoint.velocity.value());
+        m_setPointPosPub.Set(setpoint.position.value());
       }
       break;
     
@@ -36,6 +47,9 @@ void Linear::Periodic() {
 void Linear::SetDistance(double distance) {
   if (m_state != AUTO_MOVING) {
     m_state = AUTO_MOVING;
+    m_statePub.Set("AUTO_MOVING");
+    m_controller.Reset(units::meter_t{GetDistance()});
+    m_controller.SetTolerance(kTolerancePos, kToleranceVel);
     m_controller.SetGoal(units::meter_t{distance});
   }
 }
@@ -56,12 +70,23 @@ bool Linear::CheckGoal() {
 
 void Linear::StartAdjustment() {
   m_state = MANUAL_MOVING;
+  m_statePub.Set("MANUAL_MOVING");
 }
 void Linear::EndAdjustment(double distance) {
   if (m_state == MANUAL_MOVING) {
     m_state = HOLD;
+    m_statePub.Set("HOLD");
     m_holdDistance = distance;
     m_linearEncoder.Reset();
     m_offset = distance;
   }
+}
+
+void Linear::Init() {
+  m_linearMotor.SetInverted(true);
+  m_linearEncoder.SetDistancePerPulse(kWheelDiameter * std::numbers::pi / kCountsPerMotorRevolution);
+  m_linearEncoder.Reset();
+  m_holdDistance = 0.0;
+  m_state = HOLD;
+  m_statePub.Set("HOLD");
 }

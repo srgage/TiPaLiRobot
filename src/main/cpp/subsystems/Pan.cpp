@@ -1,10 +1,18 @@
 #include "subsystems/Pan.h"
 
 Pan::Pan() {
-  m_panEncoder.SetDistancePerPulse(360.0 / (kCountsPerMotorRevolution * kGearRatio));
-  m_panEncoder.Reset();
-  m_holdAngle = 0.0;
-  m_state = HOLD;
+  Init();
+
+  auto inst = nt::NetworkTableInstance::GetDefault();
+  auto table = inst.GetTable("Pan");
+  m_statePub = table->GetStringTopic("State").Publish();
+  m_backPub = table->GetDoubleTopic("Feedback").Publish();
+  m_setPointVelPub = table->GetDoubleTopic("SetPointVel").Publish();
+  m_setPointPosPub = table->GetDoubleTopic("SetPointPos").Publish();
+
+  m_backPub.Set(0.0);
+  m_setPointVelPub.Set(0.0);
+  m_setPointPosPub.Set(0.0);
 }
 
 void Pan::Periodic() {
@@ -13,14 +21,17 @@ void Pan::Periodic() {
     case AUTO_MOVING:
       if (m_controller.AtGoal()) {
         m_state = HOLD;
+        m_statePub.Set("HOLD");
         m_panMotor.Set(0.0);
         m_holdAngle = m_controller.GetGoal().position.value();
       }
       else {
-        m_panMotor.Set(
-          m_controller.Calculate(units::degree_t{m_panEncoder.GetDistance()}) + 
-          m_feedforward.Calculate(m_controller.GetSetpoint().velocity).value()
-        );
+        double back = m_controller.Calculate(units::degree_t{m_panEncoder.GetDistance()});
+        auto setpoint = m_controller.GetSetpoint();
+        m_panMotor.Set(back);
+        m_backPub.Set(back);
+        m_setPointVelPub.Set(setpoint.velocity.value());
+        m_setPointPosPub.Set(setpoint.position.value());
       }
       break;
     
@@ -43,6 +54,9 @@ void Pan::SetAngle(double angle, bool slow) { //Special
     }
 
     m_state = AUTO_MOVING;
+    m_statePub.Set("AUTO_MOVING");
+    m_controller.Reset(units::degree_t{GetAngle()});
+    m_controller.SetTolerance(kTolerancePos, kToleranceVel);
     m_controller.SetGoal(units::degree_t{angle});
   }
 }
@@ -63,11 +77,21 @@ bool Pan::CheckGoal() {
 
 void Pan::StartAdjustment() {
   m_state = MANUAL_MOVING;
+  m_statePub.Set("MANUAL_MOVING");
 }
 void Pan::EndAdjustment() {
   if (m_state == MANUAL_MOVING) {
     m_state = HOLD;
+    m_statePub.Set("HOLD");
     m_holdAngle = 0.0;
     m_panEncoder.Reset();
   }
+}
+void Pan::Init() {
+  m_panMotor.SetInverted(true);
+  m_panEncoder.SetDistancePerPulse(360.0 / (kCountsPerMotorRevolution * kGearRatio));
+  m_panEncoder.Reset();
+  m_holdAngle = 0.0;
+  m_state = HOLD;
+  m_statePub.Set("HOLD");
 }

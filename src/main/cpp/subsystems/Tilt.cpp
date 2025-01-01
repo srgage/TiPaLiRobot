@@ -1,13 +1,8 @@
 #include "subsystems/Tilt.h"
 
-#include <math.h>
 
 Tilt::Tilt() {
-  m_tiltEncoder.SetDistancePerPulse(360.0 / (kCountsPerMotorRevolution * kGearRatio));
-  m_tiltEncoder.Reset();
-  m_holdAngle = 0.0;
-  m_state = HOLD;
-  m_statePub.Set("HOLD");
+  Init();
 
   auto inst = nt::NetworkTableInstance::GetDefault();
   auto table = inst.GetTable("Tilt");
@@ -37,7 +32,6 @@ void Tilt::Periodic() {
         double back = m_controller.Calculate(units::degree_t{m_tiltEncoder.GetDistance()});
         auto setpoint = m_controller.GetSetpoint();
         double forward = m_feedforward.Calculate(setpoint.velocity).value();
-        //forward = signum(velocity)*kS.value();
         m_tiltMotor.Set(forward + back);
         m_forwardPub.Set(forward);
         m_backPub.Set(back);
@@ -90,4 +84,11 @@ void Tilt::EndAdjustment() {
     m_holdAngle = 0.0;
     m_tiltEncoder.Reset();
   }
+}
+void Tilt::Init() {
+  m_tiltEncoder.SetDistancePerPulse(360.0 / (kCountsPerMotorRevolution * kGearRatio));
+  m_tiltEncoder.Reset();
+  m_holdAngle = 0.0;
+  m_state = HOLD;
+  m_statePub.Set("HOLD");
 }

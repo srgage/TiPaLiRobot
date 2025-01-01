@@ -15,6 +15,10 @@
 
 #include "common.h"
 
+#include <networktables/NetworkTable.h>
+#include <networktables/NetworkTableInstance.h>
+#include <networktables/DoubleTopic.h>
+#include <networktables/StringTopic.h>
 class Linear : public frc2::SubsystemBase {
  public:
   Linear();
@@ -40,6 +44,8 @@ class Linear : public frc2::SubsystemBase {
   void StartAdjustment();
   void EndAdjustment(double distance);
 
+  void Init();
+
 
  private:
  /*
@@ -49,14 +55,18 @@ class Linear : public frc2::SubsystemBase {
  */
   static constexpr double kWheelDiameter = 0.06; //meters
   static constexpr int kCountsPerMotorRevolution = 585;
-  static constexpr units::meters_per_second_t kMaxVelocity = 0.2_mps;
-  static constexpr units::meters_per_second_squared_t kMaxAcceleration = 0.05_mps_sq;
+  static constexpr units::meters_per_second_t kMaxVelocity = 0.1_mps; //0.2
+  static constexpr units::meters_per_second_squared_t kMaxAcceleration = 0.025_mps_sq; //0.05
 
   static constexpr double kP = 10.0;
-  static constexpr double kI = 0.0;
-  static constexpr double kD = 1.0;
+  static constexpr double kI = 10.0; //0.0
+  static constexpr double kD = 0.0; //0.1
   static constexpr units::volt_t kS = 0.2_V; //minimum voltage to move motor
-  static constexpr auto kV = 1.0_V / 0.28_mps;
+  static constexpr auto kV = 0.0_V / 0.28_mps;
+  static constexpr auto kA = 0.0_V / 0.28_mps_sq;
+
+  static constexpr units::meter_t kTolerancePos = 0.001_m;
+  static constexpr units::meters_per_second_t kToleranceVel = 0.001_mps;
   
   static constexpr units::second_t kDt = 20_ms;
 
@@ -66,10 +76,15 @@ class Linear : public frc2::SubsystemBase {
   frc::TrapezoidProfile<units::meters>::Constraints m_constraints{kMaxVelocity, kMaxAcceleration};
 
   frc::ProfiledPIDController<units::meters> m_controller{kP, kI, kD, m_constraints, kDt};
-  frc::SimpleMotorFeedforward<units::meters> m_feedforward{kS, kV};
+  frc::SimpleMotorFeedforward<units::meters> m_feedforward{kS, kV, kA};
 
   enum SubSystemState m_state;
   double m_holdDistance;
 
   double m_offset = 0.0;
+
+  nt::StringPublisher m_statePub;
+  nt::DoublePublisher m_backPub;
+  nt::DoublePublisher m_setPointVelPub;
+  nt::DoublePublisher m_setPointPosPub;
 };
