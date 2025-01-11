@@ -11,6 +11,7 @@ void Robot::RobotInit() {
   m_tiltPub = table->GetDoubleTopic("TiltAngle").Publish();
   m_panPub = table->GetDoubleTopic("PanAngle").Publish();
   m_linearPub = table->GetDoubleTopic("LinearDistance").Publish();
+  m_slopePub = table->GetDoubleTopic("SlopeDistance").Publish();
 
   m_statePub.Set("null");
 }
@@ -182,6 +183,7 @@ void Robot::TeleopPeriodic() {
   m_tiltPub.Set(m_container.m_tilt.GetAngle());
   m_panPub.Set(m_container.m_pan.GetAngle());
   m_linearPub.Set(m_container.m_linear.GetDistance());
+  m_slopePub.Set(sqrt(pow(kCameraElevation, 2) + pow(m_container.m_linear.GetDistance(), 2)));
 }
 
 double Robot::CalcTilt(double distance) {

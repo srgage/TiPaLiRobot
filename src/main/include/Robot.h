@@ -58,4 +58,5 @@ class Robot : public frc::TimedRobot {
   nt::DoublePublisher m_tiltPub;
   nt::DoublePublisher m_panPub;
   nt::DoublePublisher m_linearPub;
+  nt::DoublePublisher m_slopePub;
 };
