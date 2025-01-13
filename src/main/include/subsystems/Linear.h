@@ -43,6 +43,7 @@ class Linear : public frc2::SubsystemBase {
 
   void StartAdjustment();
   void EndAdjustment(double distance);
+  void CancelAdjustment();
 
   void Init();
 

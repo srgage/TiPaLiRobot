@@ -85,6 +85,12 @@ void Tilt::EndAdjustment() {
     m_tiltEncoder.Reset();
   }
 }
+void Tilt::CancelAdjustment() {
+  if (m_state == MANUAL_MOVING) {
+    m_state = HOLD;
+    m_statePub.Set("HOLD");
+  }
+}
 void Tilt::Init() {
   m_tiltEncoder.SetDistancePerPulse(360.0 / (kCountsPerMotorRevolution * kGearRatio));
   m_tiltEncoder.Reset();

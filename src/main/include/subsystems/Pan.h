@@ -43,6 +43,7 @@ class Pan : public frc2::SubsystemBase {
 
   void StartAdjustment();
   void EndAdjustment();
+  void CancelAdjustment();
 
   void Init();
 

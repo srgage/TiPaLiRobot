@@ -81,6 +81,12 @@ void Linear::EndAdjustment(double distance) {
     m_offset = distance;
   }
 }
+void Linear::CancelAdjustment() {
+  if (m_state == MANUAL_MOVING) {
+    m_state = HOLD;
+    m_statePub.Set("HOLD");
+  }
+}
 
 void Linear::Init() {
   m_linearMotor.SetInverted(true);

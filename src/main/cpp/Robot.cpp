@@ -10,7 +10,7 @@ void Robot::RobotInit() {
   m_statePub = table->GetStringTopic("State").Publish();
   m_tiltPub = table->GetDoubleTopic("TiltAngle").Publish();
   m_panPub = table->GetDoubleTopic("PanAngle").Publish();
-  m_linearPub = table->GetDoubleTopic("LinearDistance").Publish();
+  m_linearPub = table->GetDoubleTopic("GroundDistance").Publish();
   m_slopePub = table->GetDoubleTopic("SlopeDistance").Publish();
 
   m_statePub.Set("null");
@@ -102,17 +102,44 @@ void Robot::TeleopPeriodic() {
         else if (xEvent) {
           m_state = PREPARE;
           m_statePub.Set("PREPARE");
-          m_position = kStartDistance;
-          double tilt = CalcTilt(kStartDistance);
-          m_container.m_linear.SetDistance(kStartDistance);
+          m_groundPosition = kGroundStartDistance;
+          m_slopePosition = CalcSlopeDistance(kGroundStartDistance);
+          double tilt = CalcTilt(kGroundStartDistance);
+          m_container.m_linear.SetDistance(m_slopePosition);
           m_container.m_pan.SetAngle(0.0, false);
           m_container.m_tilt.SetAngle(tilt);
+        }
+        else if (bEvent) {
+          m_state = MANUAL_ADJUST;
+          m_statePub.Set("MANUAL_ADJUST");
+          m_container.m_tilt.StartAdjustment();
+          m_container.m_pan.StartAdjustment();
+          m_container.m_linear.StartAdjustment();
+        }
+        break;
+
+      case MANUAL_ADJUST:
+        if (bEvent) {
+          m_state = STANDBY;
+          m_statePub.Set("STANDBY");
+          m_container.m_tilt.CancelAdjustment();
+          m_container.m_pan.CancelAdjustment();
+          m_container.m_linear.CancelAdjustment();
+        }
+        else if (aEvent) {
+          m_container.m_linear.EndAdjustment(CalcSlopeDistance(kGroundStartDistance));
+          m_container.m_linear.StartAdjustment();
+        }
+        else {
+          m_container.m_tilt.SetSpeed(leftVertAxis*0.25);
+          m_container.m_pan.SetSpeed(leftHorizAxis*0.25);
+          m_container.m_linear.SetSpeed(rightVertAxis);
         }
         break;
 
       case LINEAR_ADJUST:
         if (aEvent) {
-          m_container.m_linear.EndAdjustment(kStartDistance);
+          m_container.m_linear.EndAdjustment(CalcSlopeDistance(kGroundStartDistance));
           m_state = TILT_ADJUST;
           m_statePub.Set("TILT_ADJUST");
           m_container.m_tilt.StartAdjustment();
@@ -163,14 +190,15 @@ void Robot::TeleopPeriodic() {
 
       case ROTATE_COLLECT:
         if (m_container.m_pan.CheckGoal()) {
-          m_position += kStepDistance;
-          if (m_position > kEndDistance) {
+          m_groundPosition += kGroundStepDistance;
+          if (m_groundPosition > kGroundEndDistance) {
             m_state = STANDBY;
             m_statePub.Set("STANDBY");
           }
           else {
-            double tilt = CalcTilt(m_position);
-            m_container.m_linear.SetDistance(m_position);
+            m_slopePosition = CalcSlopeDistance(m_groundPosition);
+            double tilt = CalcTilt(m_groundPosition);
+            m_container.m_linear.SetDistance(m_slopePosition);
             m_container.m_pan.SetAngle(0.0, false);
             m_container.m_tilt.SetAngle(tilt);
             m_state = PREPARE;
@@ -182,12 +210,12 @@ void Robot::TeleopPeriodic() {
   }
   m_tiltPub.Set(m_container.m_tilt.GetAngle());
   m_panPub.Set(m_container.m_pan.GetAngle());
-  m_linearPub.Set(m_container.m_linear.GetDistance());
-  m_slopePub.Set(sqrt(pow(kCameraElevation, 2) + pow(m_container.m_linear.GetDistance(), 2)));
+  m_slopePub.Set(m_container.m_linear.GetDistance());
+  m_linearPub.Set(sqrt(pow(m_container.m_linear.GetDistance(), 2) - pow(kCameraElevation, 2)));
 }
 
-double Robot::CalcTilt(double distance) {
-  return atan2(kCameraElevation, distance) * 180.0 / std::numbers::pi;
+double Robot::CalcTilt(double groundDistance) {
+  return atan2(kCameraElevation, groundDistance) * 180.0 / std::numbers::pi;
 }
 
 /**
@@ -200,3 +228,7 @@ int main() {
   return frc::StartRobot<Robot>();
 }
 #endif
+
+double Robot::CalcSlopeDistance(double groundDistance) {
+  return sqrt(pow(groundDistance, 2) + pow(kCameraElevation, 2));
+}

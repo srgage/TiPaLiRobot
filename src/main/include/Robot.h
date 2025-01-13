@@ -18,6 +18,8 @@
 enum RobotState {
   STANDBY,
 
+  MANUAL_ADJUST,
+
   LINEAR_ADJUST,
   TILT_ADJUST,
   LOADING,
@@ -38,21 +40,23 @@ class Robot : public frc::TimedRobot {
   void TeleopInit() override;
   void TeleopPeriodic() override;
   void TestPeriodic() override;
+  double CalcTilt(double groundDistance);
+  double CalcSlopeDistance(double groundDistance);
 
  private:
   RobotContainer m_container;
-  static constexpr double kCameraElevation = 1.0; //meters
-  static constexpr double kStartDistance = 0.1; //meters
-  static constexpr double kEndDistance = 0.51; //3.51 meters
-  static constexpr double kStepDistance = 0.1; //0.05 meters
+  static constexpr double kCameraElevation = 1.0; //meters 
+  static constexpr double kGroundStartDistance = 0.0; //meters
+  static constexpr double kGroundEndDistance = 0.51; //3.51 meters
+  static constexpr double kGroundStepDistance = 0.1; //0.05 meters
   enum RobotState m_state;
-  double m_position;
+  double m_groundPosition;
+  double m_slopePosition;
   bool m_lastAButton = false;
   bool m_lastBButton = false;
   bool m_lastXButton = false;
   bool m_lastYButton = false;
   bool m_lastKillButton = false;
-  double CalcTilt(double distance);
 
   nt::StringPublisher m_statePub;
   nt::DoublePublisher m_tiltPub;

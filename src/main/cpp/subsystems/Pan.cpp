@@ -87,6 +87,12 @@ void Pan::EndAdjustment() {
     m_panEncoder.Reset();
   }
 }
+void Pan::CancelAdjustment() {
+  if (m_state == MANUAL_MOVING) {
+    m_state = HOLD;
+    m_statePub.Set("HOLD");
+  }
+}
 void Pan::Init() {
   m_panMotor.SetInverted(true);
   m_panEncoder.SetDistancePerPulse(360.0 / (kCountsPerMotorRevolution * kGearRatio));
