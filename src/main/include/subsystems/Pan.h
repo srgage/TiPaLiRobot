@@ -39,6 +39,8 @@ class Pan : public frc2::SubsystemBase {
 
   double GetAngle();
 
+  void NormalizeAngle();
+
   bool CheckGoal();
 
   void StartAdjustment();
@@ -84,6 +86,7 @@ class Pan : public frc2::SubsystemBase {
 
   enum SubSystemState m_state;
   double m_holdAngle;
+  double m_offset;
 
   nt::StringPublisher m_statePub;
   nt::DoublePublisher m_backPub;

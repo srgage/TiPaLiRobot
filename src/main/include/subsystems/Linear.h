@@ -54,7 +54,7 @@ class Linear : public frc2::SubsystemBase {
   no load motor speed is 90rpm, so no load linear speed is pi * 0.06 * 90 / 60 = 0.28 mps
   kP is "volts" per meter of error, so 0.1 per cm = 10 V / m
  */
-  static constexpr double kWheelDiameter = 0.06; //meters
+  static constexpr double kWheelDiameter = 0.05866; //meters
   static constexpr int kCountsPerMotorRevolution = 585;
   static constexpr units::meters_per_second_t kMaxVelocity = 0.1_mps; //0.2
   static constexpr units::meters_per_second_squared_t kMaxAcceleration = 0.025_mps_sq; //0.05

@@ -106,7 +106,7 @@ void Robot::TeleopPeriodic() {
           m_slopePosition = CalcSlopeDistance(kGroundStartDistance);
           double tilt = CalcTilt(kGroundStartDistance);
           m_container.m_linear.SetDistance(m_slopePosition);
-          m_container.m_pan.SetAngle(0.0, false);
+          m_container.m_pan.SetAngle(kPanStartAngle, false);
           m_container.m_tilt.SetAngle(tilt);
         }
         else if (bEvent) {
@@ -184,7 +184,7 @@ void Robot::TeleopPeriodic() {
         if (m_container.m_linear.CheckGoal() && m_container.m_pan.CheckGoal() && m_container.m_tilt.CheckGoal()) {
           m_state = ROTATE_COLLECT;
           m_statePub.Set("ROTATE_COLLECT");
-          m_container.m_pan.SetAngle(360.0, true);
+          m_container.m_pan.SetAngle(kPanEndAngle, true);
         }
         break;
 
@@ -196,10 +196,12 @@ void Robot::TeleopPeriodic() {
             m_statePub.Set("STANDBY");
           }
           else {
+            // normalize pan angle to -180..180
+            m_container.m_pan.NormalizeAngle();
             m_slopePosition = CalcSlopeDistance(m_groundPosition);
             double tilt = CalcTilt(m_groundPosition);
             m_container.m_linear.SetDistance(m_slopePosition);
-            m_container.m_pan.SetAngle(0.0, false);
+            m_container.m_pan.SetAngle(kPanStartAngle, false);
             m_container.m_tilt.SetAngle(tilt);
             m_state = PREPARE;
             m_statePub.Set("PREPARE");
@@ -211,7 +213,7 @@ void Robot::TeleopPeriodic() {
   m_tiltPub.Set(m_container.m_tilt.GetAngle());
   m_panPub.Set(m_container.m_pan.GetAngle());
   m_slopePub.Set(m_container.m_linear.GetDistance());
-  m_linearPub.Set(sqrt(pow(m_container.m_linear.GetDistance(), 2) - pow(kCameraElevation, 2)));
+  m_linearPub.Set(sqrt(abs(pow(m_container.m_linear.GetDistance(), 2) - pow(kCameraElevation, 2))));
 }
 
 double Robot::CalcTilt(double groundDistance) {

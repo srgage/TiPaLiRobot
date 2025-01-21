@@ -26,7 +26,7 @@ void Pan::Periodic() {
         m_holdAngle = m_controller.GetGoal().position.value();
       }
       else {
-        double back = m_controller.Calculate(units::degree_t{m_panEncoder.GetDistance()});
+        double back = m_controller.Calculate(units::degree_t{m_panEncoder.GetDistance() + m_offset});
         auto setpoint = m_controller.GetSetpoint();
         m_panMotor.Set(back);
         m_backPub.Set(back);
@@ -68,7 +68,20 @@ void Pan::SetSpeed(double speed){
 }
 
 double Pan::GetAngle() {
-  return m_panEncoder.GetDistance();
+  return m_panEncoder.GetDistance() + m_offset;
+}
+
+void Pan::NormalizeAngle() {
+  // get the raw encoder angle
+  double angle = m_panEncoder.GetDistance();
+  double offset = 0.0;
+  while (angle + offset < -180.0) {
+    offset += 360.0;
+  }
+  while (angle + offset > 180.0) {
+    offset -= 360.0;
+  }
+  m_offset = offset;
 }
 
 bool Pan::CheckGoal() {
@@ -85,6 +98,7 @@ void Pan::EndAdjustment() {
     m_statePub.Set("HOLD");
     m_holdAngle = 0.0;
     m_panEncoder.Reset();
+    m_offset = 0.0;
   }
 }
 void Pan::CancelAdjustment() {
@@ -94,6 +108,7 @@ void Pan::CancelAdjustment() {
   }
 }
 void Pan::Init() {
+  m_offset = 0.0;
   m_panMotor.SetInverted(true);
   m_panEncoder.SetDistancePerPulse(360.0 / (kCountsPerMotorRevolution * kGearRatio));
   m_panEncoder.Reset();

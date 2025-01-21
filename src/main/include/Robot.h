@@ -47,8 +47,15 @@ class Robot : public frc::TimedRobot {
   RobotContainer m_container;
   static constexpr double kCameraElevation = 1.0; //meters 
   static constexpr double kGroundStartDistance = 0.0; //meters
-  static constexpr double kGroundEndDistance = 0.51; //3.51 meters
+  static constexpr double kGroundEndDistance = 3.61;  // 3.67 is the physical limit (slope=3.805)
   static constexpr double kGroundStepDistance = 0.1; //0.05 meters
+
+  // start before initial angle by 5 deg and end after final angle by same
+  // perform 5 rotations to give the data collection more time
+  static constexpr double kPanStartAngle = -5.0;
+  static constexpr double kPanEndRotations = 2.0;
+  static constexpr double kPanEndAngle = kPanEndRotations * 360.0 + 5.0;
+
   enum RobotState m_state;
   double m_groundPosition;
   double m_slopePosition;
